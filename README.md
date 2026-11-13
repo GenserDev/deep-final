@@ -80,13 +80,13 @@ HF_TOKEN=<token> python scripts/desplegar_space.py --space <usuario>/texto-sql  
 
 ## 3. Supuestos
 
-**Datos.** Las preguntas llegan en español y el esquema viene como `SHOW CREATE TABLE` de MySQL, con comentarios en las columnas, igual que en el entrenamiento del P3. Las bases de demostración (`veterinaria` y `airline`) son las de validación del P3, que el modelo no vio al entrenar.
+**Datos.** Suponemos que las preguntas llegan en español y que la base viene descrita como en MySQL, con un comentario que explica cada columna. Sin esos comentarios al modelo le costaría entender columnas con nombres abreviados o en inglés, como `pax_name`.
 
-**Motor de ejecución.** En el servidor no hay MySQL, así que las bases se reconstruyen en SQLite con la misma semilla y las consultas se traducen con `sqlglot`. Lo verificamos: de 160 veredictos del P3 (4 corridas por 40 preguntas), SQLite da el mismo resultado que MySQL en los 160 (`resultados/verificacion_motor.csv`). Eso vale para este tipo de consultas, no para cualquier función de MySQL.
+**Consultas.** Suponemos que lo que la gente pregunta se resuelve con SQL de uso común: contar, sumar, filtrar, agrupar, unir tablas y trabajar con fechas. Para ese tipo de consultas comprobamos que las bases de prueba en SQLite dan el mismo resultado que MySQL en los 160 casos del P3 (`resultados/verificacion_motor.csv`). Con funciones más raras de MySQL podría no ser así.
 
-**Usuario.** Lee la consulta antes de confiar en el resultado. El servicio no reemplaza la revisión de un analista en decisiones de dinero.
+**Usuario.** Suponemos que el usuario conoce su negocio y nota cuando un resultado no tiene sentido, y que revisa la consulta antes de usar el dato en una decisión importante.
 
-**Entorno.** Planeamos usar un Space gratuito de Hugging Face, pero al desplegar descubrimos que los Spaces con Docker ya requieren la suscripción PRO. Lo servimos desde una MacBook Pro M1 Pro con MPS y Cloudflare Tunnel, que es gratis. El servicio atiende una consulta a la vez y solo está disponible mientras la Mac lo tenga corriendo. El `Dockerfile` queda listo para un servidor con Docker o un Space PRO.
+**Entorno.** Suponemos que en esta etapa lo usan pocas personas a la vez, por eso atiende una consulta a la vez. También suponemos que basta con que esté disponible durante las pruebas y la presentación, no las 24 horas, y que la máquina que lo sirve tiene GPU o un chip Apple con al menos 8 GB de memoria, porque en CPU sería mucho más lento.
 
 ## 4. Modelo planteado
 
@@ -156,7 +156,7 @@ flowchart LR
 
 **Entrenamiento.** Se hizo en el P3 con Transformers y PEFT. Aquí no se reentrena.
 
-**Servicio.** `servicio/app.py` monta en un solo proceso la API de FastAPI y la interfaz de Gradio. `scripts/publicar.sh` lo levanta y lo expone con un túnel de Cloudflare. El `Dockerfile` instala torch para CPU y descarga el modelo durante la construcción, para desplegarlo en un servidor sin depender de la Mac.
+**Servicio.** `servicio/app.py` monta en un solo proceso la API de FastAPI y la interfaz de Gradio. Planeamos publicarlo en un Space gratuito de Hugging Face, pero los Spaces con Docker ya requieren la suscripción PRO, así que lo servimos desde una MacBook Pro M1 Pro con MPS. `scripts/publicar.sh` lo levanta y lo expone con un túnel de Cloudflare. El `Dockerfile` instala torch para CPU y descarga el modelo durante la construcción, para desplegarlo en un servidor sin depender de la Mac.
 
 | Ruta | Método | Uso |
 |---|---|---|
