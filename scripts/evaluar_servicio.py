@@ -18,21 +18,35 @@ EX_MINIMA = 0.60
 LATENCIA_MAXIMA = 30
 
 parametros = argparse.ArgumentParser()
-parametros.add_argument("--url", required=True)
+parametros.add_argument("--url")
+parametros.add_argument("--registro", help="uso.jsonl del servidor, para calificar consultas ya hechas sin volver a llamar a la API")
 parametros.add_argument("--corregir", action="store_true")
 parametros.add_argument("--salida", default="evaluacion_produccion")
 argumentos = parametros.parse_args()
 
 validacion = json.loads((RAIZ / "datos" / "validacion_propia.json").read_text())
 bases = Bases()
-cliente = httpx.Client(base_url=argumentos.url.rstrip("/"), timeout=300)
-print(cliente.get("/api/salud").json())
 
+
+def respuestas_del_registro(ruta):
+    eventos = [json.loads(linea) for linea in Path(ruta).read_text().splitlines() if linea.strip()]
+    ultimas = {e["pregunta"]: e for e in eventos if e.get("tipo") == "consulta" and e.get("corregir") == argumentos.corregir}
+    for v in validacion:
+        yield ultimas[v["pregunta"]]
+
+
+def respuestas_de_la_api(url):
+    cliente = httpx.Client(base_url=url.rstrip("/"), timeout=300)
+    print(cliente.get("/api/salud").json())
+    for v in validacion:
+        respuesta = cliente.post("/api/sql", json={"pregunta": v["pregunta"], "base": v["base"], "corregir": argumentos.corregir})
+        respuesta.raise_for_status()
+        yield respuesta.json()
+
+
+respuestas = respuestas_del_registro(argumentos.registro) if argumentos.registro else respuestas_de_la_api(argumentos.url)
 filas = []
-for i, v in enumerate(validacion, 1):
-    respuesta = cliente.post("/api/sql", json={"pregunta": v["pregunta"], "base": v["base"], "corregir": argumentos.corregir})
-    respuesta.raise_for_status()
-    cuerpo = respuesta.json()
+for i, (v, cuerpo) in enumerate(zip(validacion, respuestas), 1):
     referencia = bases.ejecutar(v["base"], v["sql"], limite=None)
     generada = bases.ejecutar(v["base"], cuerpo["sql"], limite=None)
     acierto = generada["ok"] and comparar(referencia["filas"], generada["filas"], v["ordenado"])
@@ -46,7 +60,7 @@ tabla = pd.DataFrame(filas)
 ex = (tabla.acierto * tabla.peso).sum() / tabla.peso.sum()
 latencias = tabla.segundos.tolist()
 resumen = {
-    "url": argumentos.url, "modelo": cuerpo.get("modelo"), "corregir": argumentos.corregir,
+    "fuente": argumentos.url or argumentos.registro, "modelo": cuerpo.get("modelo"), "corregir": argumentos.corregir,
     "EX": round(float(ex), 3), "aciertos": int(tabla.acierto.sum()),
     **{nivel: f"{int(g.acierto.sum())} de {len(g)}" for nivel, g in tabla.groupby("nivel")},
     "latencia_mediana": round(statistics.median(latencias), 2), "latencia_p95": percentil(latencias, 95),
