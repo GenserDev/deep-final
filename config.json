@@ -1,0 +1,7 @@
+{
+    "modelo_base": "Qwen/Qwen3-1.7B",
+    "adapter": "adapter/",
+    "usar_adapter": false,
+    "semilla": 2026,
+    "max_tokens": 200
+}
