@@ -78,6 +78,8 @@ class Modelo:
         base = os.environ.get("RUTA_MODELO", CONFIG["modelo_base"])
         if torch.cuda.is_available():
             dispositivo, tipo = "cuda", torch.float16
+        elif torch.backends.mps.is_available():
+            dispositivo, tipo = "mps", torch.float16
         else:
             # float32 en CPU porque bfloat16 sin soporte de hardware es varias veces más lento
             dispositivo, tipo = "cpu", torch.float32
