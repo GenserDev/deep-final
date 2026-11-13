@@ -175,7 +175,17 @@ flowchart LR
 
 **Evaluación por la API pública.** Las 40 preguntas de validación se enviaron a `/api/sql` por la URL pública entre las 13:05 y las 13:07, hora de Guatemala. Las calificamos con el registro del propio servidor: `python scripts/evaluar_servicio.py --registro evidencias/registro_evaluacion.jsonl`. El registro guarda la fecha, la pregunta, la consulta generada, si se ejecutó bien, las filas y los segundos de cada una.
 
-PENDIENTE_CAPTURAS
+**Uso desde la página web.** Una consulta hecha desde la interfaz sobre `airline`. El modelo generó `SELECT class, COUNT(*) AS count FROM bookings GROUP BY class` en 3.03 s y el servicio mostró las 3 filas.
+
+![Consulta desde la interfaz web](evidencias/consulta.png)
+
+**Monitoreo.** Al cerrar la sesión de evaluación el panel registraba 41 consultas (40 por la API y 1 por la web), 0 errores del servicio, 39 consultas que se ejecutaron sin error (95.1 %), latencia mediana de 1.64 s y p95 de 3.18 s. Que una consulta se ejecute sin error no significa que sea correcta, por eso la EX se mide aparte.
+
+![Pestaña de monitoreo](evidencias/monitoreo.png)
+
+**API documentada.** FastAPI publica la documentación interactiva en `/docs` con los cinco endpoints.
+
+![Documentación de la API](evidencias/api_docs.png)
 
 **Pruebas automatizadas.** `python -m pytest pruebas` corre 18 pruebas: equivalencia de tamaños y funciones de fecha con MySQL, bloqueo de escritura, compactación del esquema, endpoints, validaciones, corrección con error, registro y métricas, y la respuesta `503` mientras el modelo carga.
 
