@@ -1,0 +1,14 @@
+{
+  "fuente": "evidencias/registro_evaluacion.jsonl",
+  "modelo": "Qwen/Qwen3-1.7B",
+  "corregir": false,
+  "EX": 0.62,
+  "aciertos": 27,
+  "dificil": "6 de 12",
+  "facil": "11 de 13",
+  "media": "10 de 15",
+  "latencia_mediana": 1.64,
+  "latencia_p95": 3.18,
+  "cumple_EX": true,
+  "cumple_latencia": true
+}
